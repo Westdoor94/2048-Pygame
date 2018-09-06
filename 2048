@@ -1,0 +1,282 @@
+#!/author/westdoor
+#!  __version__ = "1.0"
+
+#导入模块
+import pygame
+import random
+from sys import exit
+from pygame.locals import *
+
+#窗口初始化
+pygame.init()#模块初始化
+show_screen_width = 450 #设置窗口宽度
+show_screen_height = 750#设置窗口高度
+pygame.display.set_caption("2048")#设置窗口标题
+show_screen = pygame.display.set_mode((show_screen_width,show_screen_height))#显示窗口
+size = 4 #定义游戏模式为4x4矩阵
+score = 0 #分数 
+best = 2016 #最佳成绩
+num = [[0 for row in range (size)] for column in range (size)]#定义4x4的数字矩阵
+number_font = pygame.font.Font(None,50) #设置数字显示大小
+color_list = [(238, 228, 218), (237, 224, 200), (242, 177, 121), (245, 149, 99), (245, 129, 96), 
+			(246, 94, 59), (237, 207, 114), (237, 204, 97), (237, 200, 80), (255, 215, 0), (255, 140, 0)] #创建颜色RGB列表
+BASICFONT = pygame.font.Font('freesansbold.ttf', 18)
+
+#定义按钮类
+class Button(object):
+	def __init__(self,name,colour,position,size):
+		self.name = name
+		self.colour = colour                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
+		self.position = position
+		self.size = size
+	def CreateButton(self):#渲染字体
+		width,height = self.size
+		button_x,button_y = self.position
+		pygame.draw.rect(show_screen,self.colour,((button_x - width,button_y - height),(width,height)),0)#绘制矩形
+		button_font = pygame.font.Font(None, height-10)#设置按钮字体大小
+		font_final = button_font.render(self.name,True,(255,255,255))
+		button_shape = font_final.get_rect()
+		button_shape.center = (button_x - width/2,button_y - height/2)
+		show_screen.blit(font_final,button_shape)
+	def CreateText(self):#渲染字体
+		width,height = self.size
+		button_x,button_y = self.position
+		pygame.draw.rect(show_screen,self.colour,((button_x - width,button_y - height),(width,height)),0)#绘制矩形
+		button_font = pygame.font.Font(None, height-10)#设置按钮字体大小
+		font_final = button_font.render(self.name,True,(79,79,79))
+		button_shape = font_final.get_rect()
+		button_shape.center = (button_x - width/2,button_y - height/2)
+		show_screen.blit(font_final,button_shape)
+
+#游戏界面初始化
+def Map_init():
+	show_screen.fill((250,250,250)) #背景色为白色
+	game_screen = pygame.Surface((400,400)) #游戏区域设置为400*400
+	game_screen.fill((187,173,160)) #游戏区域以RGB(187,173,160)填充
+	show_screen.blit(game_screen,(25,275)) #将窗口与游戏界面区分开
+	block = pygame.Surface((90,90)) #数字方块的大小设置为90*90
+	Text = Button("Join the numbers and get to the 2048 tile!",(250,250,250),(425,240),(400,40))
+	Text.CreateText()
+	Text_2048 = Button("2048",(250,250,250),(175,180),(130,110))
+	Text_2048.CreateText()
+	Score_Text = Button("SCORE",(187,173,160),(315,115),(100,35))
+	Score_Text.CreateButton()
+	Score_show = Button(str(score),(187,173,160),(315,160),(100,50))
+	Score_show.CreateButton()
+	Best_Text = Button("BEST",(187,173,160),(425,115),(100,35))
+	Best_Text.CreateButton()
+	Best_show = Button(str(best),(187,173,160),(425,160),(100,50))
+	Best_show.CreateButton()
+
+	for row in range(size): #根据行列进行方块的绘制
+		for column in range(size):
+			block_x = 25 + (row + 1) * 8 + row * 90
+			block_y = 275 + (column + 1) * 8 + column * 90
+			block.fill((205,193,180)) #数字方块以RGB(205,193,180)填充
+			show_screen.blit(block,(block_x,block_y))
+			if (num[row][column] == 0):
+				continue
+			block.fill(Colour(num[row][column]))
+			show_screen.blit(block,(block_x,block_y))
+			if (num[row][column] <= 4):
+				number_colour = number_font.render(str(num[row][column]),True,(119,110,101))
+			else: 
+				number_colour = number_font.render(str(num[row][column]),True,(249,246,242))
+			number_shape = number_colour.get_rect()
+			number_shape.center = (block_x + 45,block_y + 45)
+			show_screen.blit(number_colour,number_shape)
+
+	if Game_Over() == True:#判断游戏是否结束
+		Text = Button("You losed the game with score = "+str(best),(250,250,250),(425,730),(400,40))
+		Text.CreateText()
+		loseemoji = pygame.image.load("lose.png").convert()
+		show_screen.blit(loseemoji,(25,275))
+		Text = Button("Please Try Again! Key N for a new game!",(250,250,250),(425,240),(400,40))
+		Text.CreateText()	
+	if Game_Win() == True:#判断是否达到获胜标准
+		Text = Button("Congratuation! You win the game",(250,250,250),(425,730),(400,40))
+		Text.CreateText()
+		winemoji = pygame.image.load("win.png").convert()
+		show_screen.blit(winemoji,(25,275))
+		Text = Button("Why not challenge yourself!",(250,250,250),(425,240),(400,40))
+		Text.CreateText()	
+
+#定义数字方块的颜色函数
+def Colour(number):
+	index = -1
+	while (number > 0):
+		index = index + 1
+		number = number / 2
+	return color_list[index%10]
+
+#定义分数增加的函数
+def Add_score(number):
+	global score,best
+	score = score + number
+	if (score > best):
+		best = score
+
+#数据初始化
+def Data_init():
+	for row in range (size):
+		for column in range (size):
+			num[row][column] = 0
+	block_x1 = 0
+	block_y1 = 0
+	block_x2 = 0
+	block_y2 = 0
+	while ((block_x1 == block_x2 and block_y1 == block_y2)):
+		block_x1 = random.randint(0,size-1)
+		block_y1 = random.randint(0,size-1)
+		block_x2 = random.randint(0,size-1)
+		block_y2 = random.randint(0,size-1)
+	num[block_x1][block_y1] = 2
+	num[block_x2][block_y2] = 2
+
+#数据插入
+def Insert():
+	number = random.randint(0,7)
+	if number == 0:
+		number = 8
+	elif number > 0 and number <= 4:
+		number = 4
+	else:
+		number = 2
+	block_row =random.randint(0,size-1)
+	block_column = random.randint(0,size-1)
+	while (num[block_row][block_column] != 0):
+		block_row = random.randint(0,size-1)
+		block_column = random.randint(0,size-1)
+	num[block_row][block_column] = number
+
+#定义LEFT键操作
+def Key_Left():
+	for column in range(size):
+		bol = [0 for number in range(size)]
+		row = 1
+		while(row < size):
+			while (row > 0 and num[row][column] != 0 and num[row-1][column] == 0):
+				num[row-1][column] = num[row][column]
+				num[row][column] = 0
+				row = row - 1
+			if (row > 0 and bol[row - 1] == 0 and num[row][column] == num[row-1][column]):
+				num[row-1][column] =  num[row-1][column]*2
+				Add_score(num[row-1][column])
+				num[row][column] = 0
+				bol[row - 1] = 1
+			row =row + 1
+
+#定义RIGHT键操作
+def Key_Right():
+	for column in range(size):
+		bol = [0 for number in range(size)]
+		row = 2
+		while(row >= 0):
+			while (row+1 <= size-1 and num[row][column] != 0 and num[row+1][column] == 0):
+				num[row+1][column] = num[row][column]
+				num[row][column] = 0
+				row = row + 1
+			if (row < size-1 and bol[row + 1] == 0 and num[row][column] == num[row+1][column]):
+				num[row+1][column] =  num[row+1][column]*2
+				Add_score(num[row+1][column])
+				num[row][column] = 0
+				bol[row + 1] = 1
+			row =row-1
+
+#定义UP键操作
+def Key_Up():
+	for row in range(size):
+		bol = [0 for number in range(size)]
+		column = 1
+		while(column < size):
+			while (column > 0 and num[row][column] != 0 and num[row][column - 1] == 0):
+				num[row][column - 1] = num[row][column]
+				num[row][column] = 0
+				column = column - 1
+			if (column > 0 and bol[column - 1] == 0 and num[row][column] == num[row][column - 1]):
+				num[row][column - 1] =  num[row][column-1]*2
+				Add_score(num[row][column - 1])
+				num[row][column] = 0
+				bol[column - 1] = 1
+			column = column+1
+
+#定义DOWN键操作
+def Key_Down():
+   	for row in range(size):
+   		bol = [0 for number in range(size)]
+   		column = size
+   		while(column >= 0):
+   			while (column < size-1 and num[row][column] != 0 and num[row][column + 1] == 0):
+   				num[row][column + 1] = num[row][column]
+   				num[row][column] = 0
+   				column = column + 1
+   			if (column < size-1 and bol[column] == 0 and num[row][column] == num[row][column+1]):
+   				num[row][column + 1] = num[row][column] *2
+   				Add_score(num[row][column + 1])
+   				num[row][column] = 0
+   				bol[column + 1] = 1
+   			column = column - 1
+
+#判断游戏结束
+def Game_Over():
+	#如果有0存在
+	for row in range (size):
+		for column in range (size):
+			if num[row][column] == 0:
+				return False
+	#如果上下是否相等			
+	for row in range (size):
+		for column in range (size-1):
+			if num[row][column] == num[row][column+1]:
+				return False
+	#检查左右是否相等
+	for column in range (size):
+		for row in range (size-1):
+			if num[row][column] == num[row+1][column]:
+				return False
+	return True
+
+#定义获胜标准函数
+def Game_Win():
+	for row in range(size):
+		for column in range(size):
+			if num[row][column] >= 2048:
+				return True
+	return False
+
+#游戏运行流程
+if __name__ == '__main__':
+	pygame.mixer.init()
+	backgroundmusic = 'backgroundmusic.mp3'
+	pygame.mixer.music.load(backgroundmusic)
+	Data_init()
+	while True:
+		for event in pygame.event.get():
+			Delta = False
+			if event.type == pygame.QUIT:
+				exit()
+			elif event.type == pygame.KEYDOWN:
+				if event.key == pygame.K_LEFT:
+					pygame.mixer.music.play(1)
+					Key_Left()
+					Delta = True
+				elif event.key == pygame.K_RIGHT:
+					pygame.mixer.music.play(1)
+					Key_Right()
+					Delta = True					
+				elif event.key == pygame.K_UP:
+					pygame.mixer.music.play(1)
+					Key_Up()
+					Delta = True					
+				elif event.key == pygame.K_DOWN:
+					pygame.mixer.music.play(1)
+					Key_Down()
+					Delta = True
+				elif event.key == pygame.K_n:
+					Data_init()
+				if (Delta == True and Game_Over() == False):
+					Insert()
+				else:
+					pass
+		Map_init()
+		pygame.display.update() #刷新显示屏幕
